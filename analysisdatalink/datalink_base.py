@@ -78,7 +78,7 @@ class DataLink():
             filter_obj = self.models[model_name].pre_pt_root_id.in_(pre_ids)
         else:
             filter_obj = and_(self.models[model_name].post_pt_root_id.in_(post_ids),
-                              self.models[model_name].post_pt_root_id.in_(pre_ids))
+                              self.models[model_name].pre_pt_root_id.in_(pre_ids))
 
         data_df = self.run_query(model_name, filter_obj)
         data_df = fix_wkb_columns(data_df)
