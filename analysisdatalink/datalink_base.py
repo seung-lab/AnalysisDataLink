@@ -6,6 +6,7 @@ from emannotationschemas import get_schema
 from emannotationschemas.models import make_annotation_model, make_cell_segment_model
 from geoalchemy2.shape import to_shape, from_shape
 from geoalchemy2 import func as geo_func
+from geoalchemy2.elements import WKBElement
 from shapely import geometry
 from sqlalchemy import func
 from sqlalchemy import and_
@@ -21,14 +22,11 @@ def wkb_to_numpy(wkb):
     shp=to_shape(wkb)
     return np.array([shp.xy[0][0],shp.xy[1][0], shp.z], dtype=np.int)
 
-def fix_synapse_df(df):
-    df['pre_pt_position']=df.pre_pt_position.apply(wkb_to_numpy)
-    df['post_pt_position']=df.post_pt_position.apply(wkb_to_numpy)
-    df['ctr_pt_position']=df.ctr_pt_position.apply(wkb_to_numpy)
-    return df
-
-def fix_cell_type_df(df):
-    df['pt_position'] = df.pt_position.apply(wkb_to_numpy)
+def fix_wkb_columns(df):
+    if len(df) > 0:
+        for colname in df.columns:
+            if isinstance(df.at[0,colname], WKBElement):
+                df[colname] = df[colname].apply(wkb_to_numpy)
     return df
 
 class DataLink():
@@ -43,10 +41,12 @@ class DataLink():
         self.session = Session()
         self.dataset = dataset
         self.data_version = version
-        self.CellSegmentModel = make_cell_segment_model(self.dataset, version=self.data_version)
         self.models = {}
+        make_cell_segment_model(self.dataset, version=self.data_version)
 
     def add_annotation_model(self, model_name, schema_name, table_name, version=None):
+        if model_name in self.models:
+            print('Model name \'{}\' already exists'.format(model_name))
         if version is None:
             version = self.data_version
         self.models[model_name] = make_annotation_model(self.dataset, schema_name, table_name, version=version)
@@ -81,7 +81,7 @@ class DataLink():
                               self.models[model_name].post_pt_root_id.in_(pre_ids))
 
         data_df = self.run_query(model_name, filter_obj)
-        data_df = fix_synapse_df(data_df)
+        data_df = fix_wkb_columns(data_df)
         return data_df
 
     def query_cell_type(self, model_name, oids=None, cell_type=None):
@@ -98,5 +98,23 @@ class DataLink():
                               self.models[model_name].cell_type.in_(cell_type))
 
         data_df = self.run_query(model_name, filter_obj)
-        data_df = fix_cell_type_df(data_df)
+        data_df = fix_wkb_columns(data_df)
+        return data_df
+
+    def query_cell_id(self, model_name, oids=None, cell_ids=None):
+        if isinstance(cell_ids, np.integer):
+            cell_ids = [cell_ids]
+
+        if oids is None and cell_ids is None:
+            filter_obj = None
+        elif oids is None:
+            filter_obj = self.models[model_name].func_id.in_(cell_ids)
+        elif cell_ids is None:
+            filter_obj = self.models[model_name].pt_root_id.in_(oids)
+        else:
+            filter_obj = and_(self.models[model_name].pt_root_id.in_(oids),
+                              self.models[model_name].func_id.in_(cell_ids))
+
+        data_df = self.run_query(model_name, filter_obj)
+        data_df = fix_wkb_columns(data_df)
         return data_df
