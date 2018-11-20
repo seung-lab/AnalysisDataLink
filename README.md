@@ -22,12 +22,12 @@ Getting all the cell segment ids (also called root ids):
 ```
 import pandas as pd
 sql_query = "SELECT * FROM pinky100_cellsegment_v38"
-df = pd.read_sql(sql_query, database_uri, index_col="id)
+df = pd.read_sql(sql_query, database_uri, index_col="id")
 ```
 
 where `database_uri` is build as follows:
 
 ```
-database_uri = "postgresql://{user_name}:{password}@{database_ip}/postgres
+database_uri = "postgresql://{user_name}:{password}@{database_ip}/postgres"
 ```
 
