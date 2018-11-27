@@ -128,24 +128,21 @@ class AnalysisDataLinkBase(object):
         """ Loads database model for an annotation schema
 
         Args:
-            schema_name: Name of the schema for the table from emannotationschemas
             table_name: Table name for the database
-            model_name: Reference name for model (optional, defaults to same as table_name)
-            version: Materialization version (Optional)
         """
         if table_name in self._models:
             return True
 
-        if "synapse" in table_name:
-            self._add_synapse_compartment_model(synapse_table_name=table_name)
-
         schema_name = get_annotation_info(self.dataset_name,
                                           table_name)["schema_name"]
-
         try:
             self._models[table_name] = em_models.make_annotation_model(
                 dataset=self.dataset_name, annotation_type=schema_name,
                 table_name=table_name, version=self.materialization_version)
+
+            if schema_name == 'synapse':
+                self._add_synapse_compartment_model(synapse_table_name=table_name)
+            
             return True
         except Exception as e:
             print(e)
