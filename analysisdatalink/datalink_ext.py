@@ -10,7 +10,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                          sqlalchemy_database_uri, verbose=verbose)
 
     def query_synapses(self, synapse_table, pre_ids=None, post_ids=None,
-                       compartment_table="postsynapsecompartment"):
+                       compartment_labels=None, compartment_table="postsynapsecompartment"):
         """ Queries synapses
 
         :param synapse_table: str
@@ -22,7 +22,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         :return:
         """
 
-        filter_in_dict = {synapse_table: {}}
+        filter_in_dict = defaultdict(dict)
         if pre_ids is not None:
             filter_in_dict[synapse_table]["pre_pt_root_id"] = pre_ids
         if post_ids is not None:
@@ -31,6 +31,8 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         if compartment_table is not None:
             tables = [[synapse_table, "id"],
                       [compartment_table, "synapse_id"]]
+            if compartment_labels is not None:
+                filter_in_dict[compartment_table]['label'] = compartment_labels
         else:
             tables = [synapse_table]
 
