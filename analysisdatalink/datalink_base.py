@@ -48,7 +48,7 @@ def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
 
 class AnalysisDataLinkBase(object):
     def __init__(self, dataset_name, materialization_version,
-                 sqlalchemy_database_uri=None):
+                 sqlalchemy_database_uri=None, verbose=True):
 
         if sqlalchemy_database_uri is None:
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
@@ -63,7 +63,7 @@ class AnalysisDataLinkBase(object):
             dataset_name, version=self.materialization_version)
 
         self._sqlalchemy_engine = create_engine(sqlalchemy_database_uri,
-                                                echo=True)
+                                                echo=verbose)
         em_models.Base.metadata.create_all(self.sqlalchemy_engine)
 
         self._sqlalchemy_session = sessionmaker(bind=self.sqlalchemy_engine)
