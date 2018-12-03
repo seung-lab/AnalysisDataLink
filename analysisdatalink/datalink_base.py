@@ -29,6 +29,18 @@ def fix_wkb_columns(df):
     return df
 
 
+def get_materialization_versions(dataset_name, materialization_endpoint=None):
+    """ Gets materialization versions with timestamps """
+    if materialization_endpoint is None:
+        materialization_endpoint = analysisdatalink.materialization_endpoint
+
+    url = '{}/api/dataset/{}'.format(materialization_endpoint, dataset_name)
+    r = requests.get(url)
+    assert r.status_code == 200
+    versions = {d['version']:d['time_stamp'] for d in r.json()}
+    return versions
+
+
 def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
     """ Reads annotation info from annotation engine endpoint """
 
