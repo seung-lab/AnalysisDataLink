@@ -166,7 +166,7 @@ class AnalysisDataLinkBase(object):
         query = self.this_sqlalchemy_session.query(*query_args)
 
         if join_args is not None:
-            query = query.join(*join_args)
+            query = query.join(*join_args, full=True)
 
         if filter_args is not None:
             for f in filter_args:
