@@ -1,9 +1,7 @@
 shapely
-geopandas
 emannotationschemas
 geoalchemy2
 sqlalchemy
 pandas
 requests
 numpy
-
