@@ -6,9 +6,11 @@ from collections import defaultdict
 
 class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def __init__(self, dataset_name, materialization_version,
-                 sqlalchemy_database_uri=None, verbose=True):
+                 sqlalchemy_database_uri=None, verbose=True,
+                 annotation_endpoint=None):
         super().__init__(dataset_name, materialization_version,
-                         sqlalchemy_database_uri, verbose=verbose)
+                         sqlalchemy_database_uri, verbose=verbose,
+                         annotation_endpoint=annotation_endpoint)
 
     def query_synapses(self, synapse_table, pre_ids=None, post_ids=None,
                        compartment_include_filter=None,

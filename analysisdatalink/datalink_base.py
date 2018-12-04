@@ -40,7 +40,6 @@ def get_materialization_versions(dataset_name, materialization_endpoint=None):
     versions = {d['version']:d['time_stamp'] for d in r.json()}
     return versions
 
-
 def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
     """ Reads annotation info from annotation engine endpoint """
 
@@ -60,7 +59,8 @@ def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
 
 class AnalysisDataLinkBase(object):
     def __init__(self, dataset_name, materialization_version,
-                 sqlalchemy_database_uri=None, verbose=True):
+                 sqlalchemy_database_uri=None, verbose=True,
+                 annotation_endpoint=None):
 
         if sqlalchemy_database_uri is None:
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
@@ -68,6 +68,7 @@ class AnalysisDataLinkBase(object):
 
         self._dataset_name = dataset_name
         self._materialization_version = materialization_version
+        self._annotation_endpoint = annotation_endpoint
         self._sqlalchemy_database_uri = sqlalchemy_database_uri
         self._models = {}
 
@@ -146,7 +147,8 @@ class AnalysisDataLinkBase(object):
             return True
 
         schema_name = get_annotation_info(self.dataset_name,
-                                          table_name)["schema_name"]
+                                          table_name,
+                                          self._annotation_endpoint)["schema_name"]
         try:
             self._models[table_name] = em_models.make_annotation_model(
                 dataset=self.dataset_name, annotation_type=schema_name,
