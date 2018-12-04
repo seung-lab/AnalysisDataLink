@@ -12,6 +12,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
 
     def query_synapses(self, synapse_table, pre_ids=None, post_ids=None,
                        compartment_include_filter=None,
+                       include_autapses=False,
                        compartment_table="postsynapsecompartment"):
         """ Queries synapses
 
@@ -25,11 +26,13 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         """
 
         filter_in_dict = defaultdict(dict)
+        filter_equal_dict = defaultdict(dict)
         if pre_ids is not None:
             filter_in_dict[synapse_table]["pre_pt_root_id"] = pre_ids
         if post_ids is not None:
             filter_in_dict[synapse_table]["post_pt_root_id"] = post_ids
-
+        if not include_autapses:
+            filter_equal_dict[synapse_table]["valid"] = True
         if compartment_table is not None:
             tables = [[synapse_table, "id"],
                       [compartment_table, "synapse_id"]]
@@ -38,7 +41,9 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         else:
             tables = [synapse_table]
 
-        df = self.specific_query(tables, filter_in_dict=filter_in_dict)
+        df = self.specific_query(tables,
+                                 filter_in_dict=filter_in_dict,
+                                 filter_equal_dict=filter_equal_dict)
 
         return df
 
