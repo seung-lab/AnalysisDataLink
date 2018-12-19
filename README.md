@@ -11,7 +11,7 @@ The DataLink has three hierarchy levels:
 - query level: `datalink.py`
 - abstract level: `datalink_ext.py`
 
-We anticpate that most users operate on the highest level where queries to the different table schemas are predefined for convenient access. However, these functions might be too limited in some cases and require more low level access. We hope that users contribute to this repo by formulating their currently unsupported with the means of the lower level modules. 
+We anticpate that most users operate on the highest level where queries to the different table schemas are predefined for convenient access. However, these functions might be too limited in some cases and require more low level access. We hope that users contribute to this repo by formulating their currently unsupported queries with the means of the lower level modules and adding them to `datalink_ext.py`. 
 
 ### Example
 
