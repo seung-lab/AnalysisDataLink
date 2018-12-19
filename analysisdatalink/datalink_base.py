@@ -162,7 +162,6 @@ class AnalysisDataLinkBase(object):
             print(e)
             return False
 
-
     def _make_query(self, query_args, join_args=None, filter_args=None,
                     select_columns=None):
         """Constructs a query object with selects, joins, and filters
@@ -208,7 +207,6 @@ class AnalysisDataLinkBase(object):
             df = fix_wkb_columns(df)
 
         return df
-
 
     def _query(self, query_args, join_args=None, filter_args=None,
                select_columns=None, fix_wkb=True, index_col=None):

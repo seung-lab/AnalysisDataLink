@@ -15,15 +15,20 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def query_synapses(self, synapse_table, pre_ids=None, post_ids=None,
                        compartment_include_filter=None,
                        include_autapses=False,
-                       compartment_table="postsynapsecompartment"):
-        """ Queries synapses
+                       compartment_table=None):
+        """ Query synapses
 
         :param synapse_table: str
-            defines synapse table
+            table name without dataset prefix or version suffix
         :param pre_ids: None, list or np.ndarray
         :param post_ids: None, list or np.ndarray
         :param compartment_table: None, str
             defines compartment table -- has to be 'postsynapsecompartment'
+        :param compartment_include_filter: list of str
+        :param include_autapses: bool
+        :param compartment_table: None, str
+            DO NOT USE at the moment since there are no good compartment
+            labels yet
         :return:
         """
 
@@ -52,6 +57,16 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def query_cell_types(self, cell_type_table, cell_type_include_filter=None,
                          cell_type_exclude_filter=None, return_only_ids=False,
                          exclude_zero_root_ids=False):
+        """ Query cell type tables
+
+        :param cell_type_table: str
+            table name without dataset prefix or version suffix
+        :param cell_type_include_filter: list of str
+        :param cell_type_exclude_filter: list of str
+        :param return_only_ids: bool
+        :param exclude_zero_root_ids: bool
+        :return: pandas DataFrame or numpy array
+        """
 
         filter_in_dict = defaultdict(dict)
         if cell_type_include_filter is not None:
@@ -82,6 +97,16 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def query_cell_ids(self, cell_id_table, cell_id_filter=None,
                        cell_id_exclude_filter=None, return_only_ids=False,
                        exclude_zero_root_ids=False):
+        """ Query cell ids
+
+        :param cell_id_table: str
+            table name without dataset prefix or version suffix
+        :param cell_id_filter: list of uint64s
+        :param cell_id_exclude_filter: list of uint64s
+        :param return_only_ids: bool
+        :param exclude_zero_root_ids:bool
+        :return: pandas DataFrame or numpy array
+        """
         filter_in_dict = defaultdict(dict)
         if cell_id_filter is not None:
             filter_in_dict[cell_id_table]['func_id'] = cell_id_filter
@@ -110,6 +135,18 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def query_coreg(self, coreg_table, cell_id_filter=None,
                     cell_id_exclude_filter=None, return_only_mapping=False,
                     exclude_zero_root_ids=False):
+        """ Queries coregistration
+
+        :param coreg_table: str
+            table name without dataset prefix or version suffix
+        :param cell_id_filter: list of uint64s
+        :param cell_id_exclude_filter: list of uint64s
+        :param return_only_mapping: bool
+            returns an array of [[root_id, f_id], ...]
+        :param exclude_zero_root_ids: bool
+            exclude zero root ids
+        :return: pandas DataFrame or numpy array
+        """
         filter_in_dict = defaultdict(dict)
         if cell_id_filter is not None:
             filter_in_dict[coreg_table]['func_id'] = cell_id_filter

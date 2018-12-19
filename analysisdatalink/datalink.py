@@ -25,6 +25,8 @@ class AnalysisDataLink(datalink_base.AnalysisDataLinkBase):
         :param filter_in_dict: dict of dicts
             outer layer: keys are table names
             inner layer: keys are column names, values are entries to filter by
+        :param filter_notin_dict: dict of dicts
+            inverse to filter_in_dict
         :param select_columns: list of str
         :return:
         """
