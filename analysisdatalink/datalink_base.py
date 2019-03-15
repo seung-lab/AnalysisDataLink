@@ -8,11 +8,20 @@ import time
 import numpy as np
 import pandas as pd
 import os
+import re
 import json
 import requests
 
 import analysisdatalink
 
+def build_database_uri(base_uri, dataset_name, materialization_version):
+    """Builds database name out of parameters"""
+    qry_pg = re.search('/postgres$', base_uri)
+    # Hack to convert old ids. Should be dropped when the new system is rolled out.
+    if qry_pg is not None:
+        base_uri = base_uri[0:qry_pg.start()]
+    database_suffix = '/{}_v{}'.format(dataset_name, materialization_version)
+    return base_uri + database_suffix
 
 def wkb_to_numpy(wkb):
     """ Fixes single geometry column """
@@ -65,6 +74,9 @@ class AnalysisDataLinkBase(object):
         if sqlalchemy_database_uri is None:
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
             assert sqlalchemy_database_uri is not None
+        sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
+        if verbose == True:
+            print('Using URI: {}'.format(sqlalchemy_database_uri))
 
         self._dataset_name = dataset_name
         self._materialization_version = materialization_version
@@ -156,7 +168,7 @@ class AnalysisDataLinkBase(object):
 
             if schema_name == 'synapse':
                 self._add_synapse_compartment_model(synapse_table_name=table_name)
-            
+
             return True
         except Exception as e:
             print(e)
