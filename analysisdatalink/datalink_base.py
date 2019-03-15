@@ -20,8 +20,9 @@ def build_database_uri(base_uri, dataset_name, materialization_version):
     # Hack to convert old ids. Should be dropped when the new system is rolled out.
     if qry_pg is not None:
         base_uri = base_uri[0:qry_pg.start()]
-    database_suffix = '/{}_v{}'.format(dataset_name, materialization_version)
-    return base_uri + database_suffix
+    database_suffix = em_models.format_database_name(dataset_name, materialization_version)
+    return base_uri + '/' + database_suffix
+
 
 def wkb_to_numpy(wkb):
     """ Fixes single geometry column """
