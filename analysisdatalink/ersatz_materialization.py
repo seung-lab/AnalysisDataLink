@@ -63,10 +63,16 @@ def ersatz_point_query(xyzs,
                        sql_database_uri,
                        cv_path,
                        segmentation_scaling=[2,2,1],
-                       other_columns={}):
+                       additional_columns={}):
     '''
     Given a set of points, returns a dataframe formatted like a database query.
     Aligned to a particular materialization version.
+    :param xyzs: Nx3 array of point positions in supervoxels.
+    :param materialization_version: Int, version in the materialized database.
+    :param sql_database_uri: String, materialization database URI.
+    :param cv_path: String, cloudvolume path.
+    :param segmentation_scaling: 3 element array, Gives xyz scaling between segmentation and imagery for CloudVolume
+    :param additional_columns: Dict with keys as strings and N-length array-likes as values. Extra columns in dataframe. 
     '''
     sv_ids = lookup_supervoxels(xyzs, cv_path, segmentation_scaling=segmentation_scaling)
     materialization_time = get_materialization_timestamp(materialization_version, sql_database_uri)
@@ -74,6 +80,6 @@ def ersatz_point_query(xyzs,
     pt_dict = {'pt_position': [list(xyz) for xyz in xyzs],
                'pt_supervoxel_id': sv_ids,
                'pt_root_id': root_ids}
-    dat_dict = {**pt_dict, **other_columns}
+    dat_dict = {**pt_dict, **additional_columns}
     df = pd.DataFrame(dat_dict)
     return df
