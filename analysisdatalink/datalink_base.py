@@ -65,7 +65,9 @@ class AnalysisDataLinkBase(object):
         if sqlalchemy_database_uri is None:
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
             assert sqlalchemy_database_uri is not None
-
+        sqlalchemy_database_uri = em_models.format_version_db_uri(sqlalchemy_database_uri,
+                                                                  dataset=dataset_name,
+                                                                  version=materialization_version)
         self._dataset_name = dataset_name
         self._materialization_version = materialization_version
         self._annotation_endpoint = annotation_endpoint
