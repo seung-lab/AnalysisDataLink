@@ -1,5 +1,7 @@
 from .datalink import AnalysisDataLink
 
+mapping_suffix = '_v{}'
+
 def annotation_version_mapping(table,
                                version_from,
                                version_to,
@@ -20,8 +22,8 @@ def annotation_version_mapping(table,
                                          filter_notin_dict=filter_notin_dict,
                                          filter_equal_dict=filter_equal_dict)
     
-    mapping_column_from = mapping_column + '_{}'.format(version_from)
-    mapping_column_to = mapping_column + '_{}'.format(version_to)
+    mapping_column_from = mapping_column + mapping_suffix.format(version_from)
+    mapping_column_to = mapping_column + mapping_suffix.format(version_to)
 
     if mapping_column_from not in df_merge.columns:
         raise ValueError('Mapping column ''{}'' not in annotation table'.format(mapping_column))
@@ -51,7 +53,7 @@ def multiversion_merged_query(table,
                                table, filter_in_dict, filter_notin_dict, filter_equal_dict)
     
     return df_A.merge(df_B, on='id', how='outer',
-                  suffixes=('_{}'.format(version_A), '_{}'.format(version_B)))
+                  suffixes=(mapping_suffix.format(version_A), mapping_suffix.format(version_B)))
 
 
 def _specific_version_query(dataset_name, sql_database_uri_base, data_version,
