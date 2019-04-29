@@ -9,8 +9,7 @@ def annotation_version_mapping(table,
                                merge_column='id',
                                filter_in_dict={},
                                filter_notin_dict={},
-                               filter_equal_dict={}):
-    
+                               filter_equal_dict={}):    
     df_merge = multiversion_merged_query(table,
                                          version_from,
                                          version_to,
@@ -27,8 +26,7 @@ def annotation_version_mapping(table,
     if mapping_column_from not in df_merge.columns:
         raise ValueError('Mapping column ''{}'' not in annotation table'.format(mapping_column))
     
-    return df_merge[[mapping_column_from, mapping_column_to]].rename(columns={mapping_column_from:mapping_column+'_from',
-                                                                              mapping_column_to:mapping_column+'_to'})
+    return df_merge[[mapping_column_from, mapping_column_to]]
 
 
 def multiversion_merged_query(table,
