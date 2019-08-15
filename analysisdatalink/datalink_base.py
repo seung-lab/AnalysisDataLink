@@ -40,14 +40,15 @@ def fix_wkb_columns(df):
     return df
 
 def fix_decimal_columns(df):
-    is_decimal = np.vectorize(lambda x: isinstance(x, Decimal))
-    is_integer_col = np.vectorize(lambda x: float(x).is_integer())
-    for col in df.columns:
-        if np.all(is_decimal(df[col])):
-            if np.all(is_integer_col(df[col])):
-                df[col] = df[col].apply(np.int64)
-            else:
-                df[col] = df[col].apply(np.float)
+    if len(df) > 0:
+        is_decimal = np.vectorize(lambda x: isinstance(x, Decimal))
+        is_integer_col = np.vectorize(lambda x: float(x).is_integer())
+        for col in df.columns:
+            if np.all(is_decimal(df[col])):
+                if np.all(is_integer_col(df[col])):
+                    df[col] = df[col].apply(int)
+                else:
+                    df[col] = df[col].apply(np.float)
     return df
 
 def get_materialization_versions(dataset_name, materialization_endpoint=None):
@@ -242,6 +243,7 @@ class AnalysisDataLinkBase(object):
         :param query_args:
         :param join_args:
         :param filter_args:
+
         :param select_columns:
         :param fix_wkb:
         :param index_col:
