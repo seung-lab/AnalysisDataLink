@@ -76,7 +76,7 @@ class AnalysisDataLinkBase(object):
             assert sqlalchemy_database_uri is not None
         
         self._base_engine = create_engine(sqlalchemy_database_uri, echo=verbose)
-        self._sqlalchemy_base_session = sessionmaker(bind=self._base_engine)
+        self._base_sqlalchemy_session = sessionmaker(bind=self._base_engine)
         self._this_sqlalchemy_base_session = None
 
         sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
@@ -128,7 +128,7 @@ class AnalysisDataLinkBase(object):
     @property
     def base_sqlalchemy_session(self):
         if self._base_sqlalchemy_session is None:
-            self._this_sqlalchemy_base_session  = self._sqlalchemy_base_session()
+            self._this_sqlalchemy_base_session  = self._base_sqlalchemy_session()
         return self._this_sqlalchemy_base_session 
 
     @property
