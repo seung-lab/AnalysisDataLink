@@ -185,7 +185,8 @@ class AnalysisDataLinkBase(object):
         base_query=base_query.filter(em_models.AnalysisTable.analysisversion == av)
         base_query.filter(em_models.AnalysisTable.tablename == table_name)
 
-        schema_name = base_query.first()
+        schema = base_query.first()
+        schema_name = schema.schema
         if schema_name is None:
             schema_name =  get_annotation_info(self.dataset_name, table_name,
                                        self._annotation_endpoint)
