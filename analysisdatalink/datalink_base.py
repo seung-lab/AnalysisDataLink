@@ -126,7 +126,7 @@ class AnalysisDataLinkBase(object):
         return self._sqlalchemy_session
 
     @property
-    def base_sqlalchemy_session(self):
+    def this_sqlalchemy_base_session(self):
         if self._base_sqlalchemy_session is None:
             self._this_sqlalchemy_base_session  = self._base_sqlalchemy_session()
         return self._this_sqlalchemy_base_session 
@@ -174,7 +174,7 @@ class AnalysisDataLinkBase(object):
         if table_name in self._models:
             return True
 
-        base_query=self.base_sqlalchemy_session.query(em_models.AnalysisTable)
+        base_query=self.this_sqlalchemy_base_session.query(em_models.AnalysisTable)
         base_query=base_query.filter(em_models.AnalysisTable.analysisversion == self._materialization_version)
         base_query.filter(em_models.AnalysisTable.tablename == table_name)
 
