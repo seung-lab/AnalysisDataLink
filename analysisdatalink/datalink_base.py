@@ -183,7 +183,7 @@ class AnalysisDataLinkBase(object):
 
         base_query=self.this_sqlalchemy_base_session.query(em_models.AnalysisTable)
         base_query=base_query.filter(em_models.AnalysisTable.analysisversion == av)
-        base_query.filter(em_models.AnalysisTable.tablename == table_name)
+        base_query=base_query.filter(em_models.AnalysisTable.tablename == table_name)
 
         schema = base_query.first()
         schema_name = schema.schema
