@@ -12,7 +12,6 @@ import re
 import json
 import requests
 from decimal import Decimal
-
 import analysisdatalink
 
 def build_database_uri(base_uri, dataset_name, materialization_version):
@@ -59,7 +58,7 @@ def get_materialization_versions(dataset_name, materialization_endpoint=None):
     url = '{}/api/dataset/{}'.format(materialization_endpoint, dataset_name)
     r = requests.get(url)
     assert r.status_code == 200
-    versions = {d['version']:d['time_stamp'] for d in r.json()}
+    versions = {d['version']:d['time_stamp'] for d in r.json() if d['valid']}
     return versions
 
 def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
@@ -80,18 +79,24 @@ def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
 
 
 class AnalysisDataLinkBase(object):
-    def __init__(self, dataset_name, materialization_version,
+    def __init__(self, dataset_name, materialization_version=None,
                  sqlalchemy_database_uri=None, verbose=True,
-                 annotation_endpoint=None):
+                 annotation_endpoint=None, ):
 
         if sqlalchemy_database_uri is None:
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
             assert sqlalchemy_database_uri is not None
+        
         sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
         if verbose == True:
             print('Using URI: {}'.format(sqlalchemy_database_uri))
 
         self._dataset_name = dataset_name
+        if materialization_version is None:
+            version_d = get_materialization_versions(dataset_name=dataset_name)
+            versions = np.array(version_d.keys(), type=np.uint32)
+            materialization_version = int(np.max(versions))
+            
         self._materialization_version = materialization_version
         self._annotation_endpoint = annotation_endpoint
         self._sqlalchemy_database_uri = sqlalchemy_database_uri
