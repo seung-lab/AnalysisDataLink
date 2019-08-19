@@ -84,7 +84,7 @@ class AnalysisDataLinkBase(object):
             versions=version_query.filter(em_models.AnalysisVersion.valid == True).all()
             version_d = {v.version:v.time_stamp for v in versions}
             #version_d = get_materialization_versions(dataset_name=dataset_name)
-            versions = np.array(version_d.keys(), type=np.uint32)
+            versions = np.array(version_d.keys(), dtype=np.uint32)
             materialization_version = int(np.max(versions))
 
         sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
