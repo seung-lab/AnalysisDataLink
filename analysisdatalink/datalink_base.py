@@ -178,10 +178,11 @@ class AnalysisDataLinkBase(object):
         """
         if table_name in self._models:
             return True
-        av = self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion.version == self._materialization_version).first()
+        av = self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion)\
+            .filter(em_models.AnalysisVersion.version == self._materialization_version).first()
 
         base_query=self.this_sqlalchemy_base_session.query(em_models.AnalysisTable)
-        base_query=base_query.filter(em_models.AnalysisTable.analysisversion_id == av.id)
+        base_query=base_query.filter(em_models.AnalysisTable.analysisversion == av)
         base_query.filter(em_models.AnalysisTable.tablename == table_name)
 
         schema_name = base_query.first()
