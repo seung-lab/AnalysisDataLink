@@ -42,7 +42,7 @@ def get_materialization_versions(dataset_name, materialization_endpoint=None):
     """ Gets materialization versions with timestamps """
     if materialization_endpoint is None:
         materialization_endpoint = analysisdatalink.materialization_endpoint
-
+    
     url = '{}/api/dataset/{}'.format(materialization_endpoint, dataset_name)
     r = requests.get(url)
     assert r.status_code == 200
@@ -85,7 +85,9 @@ class AnalysisDataLinkBase(object):
 
         self._dataset_name = dataset_name
         if materialization_version is None:
-            version_d = get_materialization_versions(dataset_name=dataset_name)
+            versions=self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion.dataset == dataset_name).all()
+            version_d = {v.version:v.time_stamp for v in versions}
+            #version_d = get_materialization_versions(dataset_name=dataset_name)
             versions = np.array(version_d.keys(), type=np.uint32)
             materialization_version = int(np.max(versions))
             
