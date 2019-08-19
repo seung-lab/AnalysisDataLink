@@ -127,7 +127,7 @@ class AnalysisDataLinkBase(object):
 
     @property
     def this_sqlalchemy_base_session(self):
-        if self._base_sqlalchemy_session is None:
+        if self._this_sqlalchemy_base_session is None:
             self._this_sqlalchemy_base_session  = self._base_sqlalchemy_session()
         return self._this_sqlalchemy_base_session 
 
