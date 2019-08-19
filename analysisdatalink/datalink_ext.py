@@ -35,9 +35,9 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         filter_in_dict = defaultdict(dict)
         filter_equal_dict = defaultdict(dict)
         if pre_ids is not None:
-            filter_in_dict[synapse_table]["pre_pt_root_id"] = pre_ids
+            filter_in_dict[synapse_table]["pre_pt_root_id"] = [int(pid) for pid in pre_ids]
         if post_ids is not None:
-            filter_in_dict[synapse_table]["post_pt_root_id"] = post_ids
+            filter_in_dict[synapse_table]["post_pt_root_id"] = [int(pid) for pid in post_ids]
         if not include_autapses:
             filter_equal_dict[synapse_table]["valid"] = True
         if compartment_table is not None:
@@ -109,11 +109,11 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         """
         filter_in_dict = defaultdict(dict)
         if cell_id_filter is not None:
-            filter_in_dict[cell_id_table]['func_id'] = cell_id_filter
+            filter_in_dict[cell_id_table]['func_id'] = [int(pid) for pid in cell_id_filter]
 
         filter_notin_dict = defaultdict(dict)
         if cell_id_exclude_filter is not None:
-            filter_notin_dict[cell_id_table]['func_id'] = cell_id_exclude_filter
+            filter_notin_dict[cell_id_table]['func_id'] = [int(pid) for pid in cell_id_exclude_filter]
         if exclude_zero_root_ids is not None:
             filter_notin_dict[cell_id_table]['pt_root_id'] = [0]
 
@@ -149,11 +149,11 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         """
         filter_in_dict = defaultdict(dict)
         if cell_id_filter is not None:
-            filter_in_dict[coreg_table]['func_id'] = cell_id_filter
+            filter_in_dict[coreg_table]['func_id'] = [int(pid) for pid in cell_id_filter]
 
         filter_notin_dict = defaultdict(dict)
         if cell_id_exclude_filter is not None:
-            filter_notin_dict[coreg_table]['func_id'] = cell_id_exclude_filter
+            filter_notin_dict[coreg_table]['func_id'] = [int(pid) for pid in cell_id_exclude_filter]
         if exclude_zero_root_ids is not None:
             filter_notin_dict[coreg_table]['pt_root_id'] = [0]
 
