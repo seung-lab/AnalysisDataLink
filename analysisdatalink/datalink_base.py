@@ -79,7 +79,9 @@ class AnalysisDataLinkBase(object):
         self._base_sqlalchemy_session = sessionmaker(bind=self._base_engine)
         self._this_sqlalchemy_base_session = None
         if materialization_version is None:
-            versions=self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion.dataset == dataset_name).filter(em_models.AnalysisVersion.valid == True).all()
+            version_query=self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion)
+            version_query=version_query.filter(em_models.AnalysisVersion.dataset == dataset_name)
+            versions=version_query.filter(em_models.AnalysisVersion.valid == True).all()
             version_d = {v.version:v.timestamp for v in versions}
             #version_d = get_materialization_versions(dataset_name=dataset_name)
             versions = np.array(version_d.keys(), type=np.uint32)
