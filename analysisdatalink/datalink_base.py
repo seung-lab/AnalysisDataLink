@@ -75,6 +75,10 @@ class AnalysisDataLinkBase(object):
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
             assert sqlalchemy_database_uri is not None
         
+        self._base_engine = create_engine(sqlalchemy_database_uri, echo=verbose)
+        self._sqlalchemy_base_session = sessionmaker(bind=self._base_engine)
+        self._this_sqlalchemy_base_session = None
+
         sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
         if verbose == True:
             print('Using URI: {}'.format(sqlalchemy_database_uri))
@@ -98,7 +102,7 @@ class AnalysisDataLinkBase(object):
         em_models.Base.metadata.create_all(self.sqlalchemy_engine)
 
         self._sqlalchemy_session = sessionmaker(bind=self.sqlalchemy_engine)
-
+        
         self._this_sqlalchemy_session = None
 
     @property
@@ -120,6 +124,12 @@ class AnalysisDataLinkBase(object):
     @property
     def sqlalchemy_session(self):
         return self._sqlalchemy_session
+
+    @property
+    def base_sqlalchemy_session(self):
+        if self._base_sqlalchemy_session is None:
+            self._this_sqlalchemy_base_session  = self._sqlalchemy_base_session()
+        return self._this_sqlalchemy_base_session 
 
     @property
     def this_sqlalchemy_session(self):
@@ -164,9 +174,15 @@ class AnalysisDataLinkBase(object):
         if table_name in self._models:
             return True
 
-        schema_name = get_annotation_info(self.dataset_name,
-                                          table_name,
-                                          self._annotation_endpoint)["schema_name"]
+        base_query=self.base_sqlalchemy_session.query(em_models.AnalysisTable)
+        base_query=base_query.filter(em_models.AnalysisTable.analysisversion == self._materialization_version)
+        base_query.filter(em_models.AnalysisTable.tablename == table_name)
+
+        schema_name = base_query.first()
+        if schema_name is None:
+            schema_name =  get_annotation_info(self.dataset_name, table_name,
+                                       self._annotation_endpoint)
+
         try:
             self._models[table_name] = em_models.make_annotation_model(
                 dataset=self.dataset_name, annotation_type=schema_name,
