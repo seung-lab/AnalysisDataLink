@@ -27,6 +27,7 @@ setup(
    version=find_version("analysisdatalink", "__init__.py"),
    description='Tools to query data from the dynamic annotation framework',
    long_description=open('README.md').read(),
+   long_description_content_type="text/markdown",
    author='Forrest Collman, Sven Dorkenwald, Casey Schneider-Mizell',
    author_email='caseysm@gmail.com',
    url="https://github.com/seung-lab/AnalysisDataLink",

@@ -54,7 +54,7 @@ def get_materialization_versions(dataset_name, materialization_endpoint=None):
     """ Gets materialization versions with timestamps """
     if materialization_endpoint is None:
         materialization_endpoint = analysisdatalink.materialization_endpoint
-
+    
     url = '{}/api/dataset/{}'.format(materialization_endpoint, dataset_name)
     r = requests.get(url)
     assert r.status_code == 200
@@ -87,15 +87,24 @@ class AnalysisDataLinkBase(object):
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
             assert sqlalchemy_database_uri is not None
         
+        self._base_engine = create_engine(sqlalchemy_database_uri, echo=verbose)
+        self._base_sqlalchemy_session = sessionmaker(bind=self._base_engine)
+        self._this_sqlalchemy_base_session = None
+        if materialization_version is None:
+            version_query=self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion)
+            version_query=version_query.filter(em_models.AnalysisVersion.dataset == dataset_name)
+            versions=version_query.filter(em_models.AnalysisVersion.valid == True).all()
+            version_d = {v.version:v.time_stamp for v in versions}
+            #version_d = get_materialization_versions(dataset_name=dataset_name)
+            versions = np.array([v for v in version_d.keys()], dtype=np.uint32)
+            materialization_version = int(np.max(versions))
+
         sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
         if verbose == True:
             print('Using URI: {}'.format(sqlalchemy_database_uri))
 
         self._dataset_name = dataset_name
-        if materialization_version is None:
-            version_d = get_materialization_versions(dataset_name=dataset_name)
-            versions = np.array(version_d.keys(), type=np.uint32)
-            materialization_version = int(np.max(versions))
+
             
         self._materialization_version = materialization_version
         self._annotation_endpoint = annotation_endpoint
@@ -110,7 +119,7 @@ class AnalysisDataLinkBase(object):
         em_models.Base.metadata.create_all(self.sqlalchemy_engine)
 
         self._sqlalchemy_session = sessionmaker(bind=self.sqlalchemy_engine)
-
+        
         self._this_sqlalchemy_session = None
 
     @property
@@ -132,6 +141,12 @@ class AnalysisDataLinkBase(object):
     @property
     def sqlalchemy_session(self):
         return self._sqlalchemy_session
+
+    @property
+    def this_sqlalchemy_base_session(self):
+        if self._this_sqlalchemy_base_session is None:
+            self._this_sqlalchemy_base_session  = self._base_sqlalchemy_session()
+        return self._this_sqlalchemy_base_session 
 
     @property
     def this_sqlalchemy_session(self):
@@ -175,10 +190,19 @@ class AnalysisDataLinkBase(object):
         """
         if table_name in self._models:
             return True
+        av = self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion)\
+            .filter(em_models.AnalysisVersion.version == self._materialization_version).first()
 
-        schema_name = get_annotation_info(self.dataset_name,
-                                          table_name,
-                                          self._annotation_endpoint)["schema_name"]
+        base_query=self.this_sqlalchemy_base_session.query(em_models.AnalysisTable)
+        base_query=base_query.filter(em_models.AnalysisTable.analysisversion == av)
+        base_query=base_query.filter(em_models.AnalysisTable.tablename == table_name)
+
+        schema = base_query.first()
+        schema_name = schema.schema
+        if schema_name is None:
+            schema_name =  get_annotation_info(self.dataset_name, table_name,
+                                       self._annotation_endpoint)
+
         try:
             self._models[table_name] = em_models.make_annotation_model(
                 dataset=self.dataset_name, annotation_type=schema_name,

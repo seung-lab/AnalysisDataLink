@@ -4,7 +4,7 @@ import sqlalchemy
 from analysisdatalink import datalink_base
 
 class AnalysisDataLink(datalink_base.AnalysisDataLinkBase):
-    def __init__(self, dataset_name, materialization_version,
+    def __init__(self, dataset_name, materialization_version=None,
                  sqlalchemy_database_uri=None, verbose=True,
                  annotation_endpoint=None):
         super().__init__(dataset_name, materialization_version,
