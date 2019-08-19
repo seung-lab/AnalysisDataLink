@@ -11,6 +11,7 @@ import os
 import re
 import json
 import requests
+from decimal import Decimal
 import analysisdatalink
 
 def build_database_uri(base_uri, dataset_name, materialization_version):
@@ -37,6 +38,17 @@ def fix_wkb_columns(df):
                 df[colname] = df[colname].apply(wkb_to_numpy)
     return df
 
+def fix_decimal_columns(df):
+    if len(df) > 0:
+        is_decimal = np.vectorize(lambda x: isinstance(x, Decimal))
+        is_integer_col = np.vectorize(lambda x: float(x).is_integer())
+        for col in df.columns:
+            if np.all(is_decimal(df[col])):
+                if np.all(is_integer_col(df[col])):
+                    df[col] = df[col].apply(int)
+                else:
+                    df[col] = df[col].apply(np.float)
+    return df
 
 def get_materialization_versions(dataset_name, materialization_endpoint=None):
     """ Gets materialization versions with timestamps """
@@ -208,7 +220,7 @@ class AnalysisDataLinkBase(object):
 
         return query
 
-    def _execute_query(self, query, fix_wkb=True, index_col=None):
+    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, index_col=None):
         """ Query the database and make a dataframe out of the results
 
         Args:
@@ -224,6 +236,9 @@ class AnalysisDataLinkBase(object):
         if fix_wkb:
             df = fix_wkb_columns(df)
 
+        if fix_decimal:
+            df = fix_decimal_columns(df)
+
         return df
 
     def _query(self, query_args, join_args=None, filter_args=None,
@@ -233,6 +248,7 @@ class AnalysisDataLinkBase(object):
         :param query_args:
         :param join_args:
         :param filter_args:
+
         :param select_columns:
         :param fix_wkb:
         :param index_col:
