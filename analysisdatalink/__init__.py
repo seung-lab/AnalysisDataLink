@@ -1,7 +1,7 @@
 import os
 import datetime
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 HOME = os.path.expanduser("~")
 
