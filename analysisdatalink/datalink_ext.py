@@ -5,7 +5,7 @@ from collections import defaultdict
 
 
 class AnalysisDataLinkExt(datalink.AnalysisDataLink):
-    def __init__(self, dataset_name, materialization_version,
+    def __init__(self, dataset_name, materialization_version=None,
                  sqlalchemy_database_uri=None, verbose=True,
                  annotation_endpoint=None):
         super().__init__(dataset_name, materialization_version,

@@ -78,18 +78,19 @@ class AnalysisDataLinkBase(object):
         self._base_engine = create_engine(sqlalchemy_database_uri, echo=verbose)
         self._base_sqlalchemy_session = sessionmaker(bind=self._base_engine)
         self._this_sqlalchemy_base_session = None
+        if materialization_version is None:
+            versions=self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion.dataset == dataset_name).filter(em_models.AnalysisVersion.valid == True).all()
+            version_d = {v.version:v.time_stamp for v in versions}
+            #version_d = get_materialization_versions(dataset_name=dataset_name)
+            versions = np.array(version_d.keys(), type=np.uint32)
+            materialization_version = int(np.max(versions))
 
         sqlalchemy_database_uri = build_database_uri(sqlalchemy_database_uri, dataset_name, materialization_version)
         if verbose == True:
             print('Using URI: {}'.format(sqlalchemy_database_uri))
 
         self._dataset_name = dataset_name
-        if materialization_version is None:
-            versions=self.this_sqlalchemy_base_session.query(em_models.AnalysisVersion.dataset == dataset_name).all()
-            version_d = {v.version:v.time_stamp for v in versions}
-            #version_d = get_materialization_versions(dataset_name=dataset_name)
-            versions = np.array(version_d.keys(), type=np.uint32)
-            materialization_version = int(np.max(versions))
+
             
         self._materialization_version = materialization_version
         self._annotation_endpoint = annotation_endpoint
