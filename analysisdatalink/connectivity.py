@@ -161,11 +161,11 @@ def adjacency_rasterplot(Adf, id_order=None, ax=None, weight_col='weight',
     ii, jj = np.where(Adf.values>0)
     w = Adf.values[ii,jj]
 
-    data_df = pd.DataFrame(data={'Postsynaptic':ii, 'Presynaptic':jj, weight_col:w})
+    data_df = pd.DataFrame(data={post_name:ii, pre_name:jj, weight_col:w})
     if rows_are == 'pre':
-        ax=sns.scatterplot(x='Postsynaptic', y='Presynaptic', size=weight_col, data=data_df, ax=ax, **kwargs)
+        ax=sns.scatterplot(x=post_name, y=pre_name, size=weight_col, data=data_df, ax=ax, **kwargs)
     else:
-        ax=sns.scatterplot(y='Postsynaptic', x='Presynaptic', size=weight_col, data=data_df, ax=ax, **kwargs)
+        ax=sns.scatterplot(y=post_name, x=pre_name, size=weight_col, data=data_df, ax=ax, **kwargs)
     ax.set_aspect(1)
     if ax.get_legend() is not None:
         ax.legend(bbox_to_anchor=(1.01,1))
