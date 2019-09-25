@@ -45,7 +45,7 @@ def fix_decimal_columns(df):
         for col in df.columns:
             if np.all(is_decimal(df[col])):
                 if np.all(is_integer_col(df[col])):
-                    df[col] = df[col].apply(np.uint64)
+                    df[col] = df[col].astype(np.uint64)
                 else:
                     df[col] = df[col].apply(np.float)
     return df
