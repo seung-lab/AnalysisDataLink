@@ -24,18 +24,34 @@ def build_database_uri(base_uri, dataset_name, materialization_version):
     return base_uri + '/' + database_suffix
 
 
-def wkb_to_numpy(wkb):
+def wkb_to_numpy(wkb, convert_to_nm = None):
     """ Fixes single geometry column """
     shp=to_shape(wkb)
-    return np.array([shp.xy[0][0],shp.xy[1][0], shp.z], dtype=np.int)
+    xyz_voxel = np.array([shp.xy[0][0],shp.xy[1][0], shp.z], dtype=np.int)
+    if convert_to_nm is not None:
+        return xyz_voxel*convert_to_nm
+    else:
+        return xyz_voxel
 
 
-def fix_wkb_columns(df):
-    """ Fixes geometry columns """
+def fix_wkb_columns(df, convert_to_nm = None):
+    """ Fixes geometry columns 
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        dataframe of results to fix columns with WKB postgis columns
+    convert_to_nm : len(3) iterable
+        the x,y,z conversion factor to convert the coordinate system to nm
+        default None leaves it as voxel resolution
+    """
+    if convert_to_nm is not None:
+        if (len(convert_to_nm) != 3):
+            raise ValueError("convert_to_nm must be length 3")
     if len(df) > 0:
         for colname in df.columns:
             if isinstance(df.at[0,colname], WKBElement):
-                df[colname] = df[colname].apply(wkb_to_numpy)
+                df[colname] = df[colname].apply(wkb_to_numpy, convert_to_nm)
     return df
 
 def fix_decimal_columns(df):
@@ -79,9 +95,30 @@ def get_annotation_info(dataset_name, table_name, annotation_endpoint=None):
 
 
 class AnalysisDataLinkBase(object):
+    """ Analysis query interface base class for dynamicannotationframework
+
+    Parameters
+    ----------
+    dataset_name : str 
+        name of dataset to query
+    materialization_version : int or None
+        what version to query (defaults to most recent), 
+        use materialization service to query what is available
+    sqlalchemy_database_uri : str
+        sqlalchemy connection uri with db type, username, password, ip, and port
+    verbose : bool
+        whether to print debugging info
+    annotation_endpoint : str or None
+        url of annotation endpoint to retrieve metadata about tables
+        (default to www.dynamicannotationframework.com/annotation)
+    convert_to_nm : len(3) iterable or None
+        conversion factor to convert spatial units into nm
+        from what is stored in db as voxels
+    """
+
     def __init__(self, dataset_name, materialization_version=None,
                  sqlalchemy_database_uri=None, verbose=True,
-                 annotation_endpoint=None, ):
+                 annotation_endpoint=None, convert_to_nm = None):
 
         if sqlalchemy_database_uri is None:
             sqlalchemy_database_uri = os.getenv('DATABASE_URI')
@@ -104,6 +141,7 @@ class AnalysisDataLinkBase(object):
             print('Using URI: {}'.format(sqlalchemy_database_uri))
 
         self._dataset_name = dataset_name
+        self.convert_to_nm = convert_to_nm
 
             
         self._materialization_version = materialization_version
@@ -244,13 +282,18 @@ class AnalysisDataLinkBase(object):
 
         return query
 
-    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, index_col=None):
+    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, index_col=None, convert_to_nm=None):
         """ Query the database and make a dataframe out of the results
 
-        Args:
-            query: SQLAlchemy query object
-            fix_wkb: Boolean to turn wkb objects into numpy arrays (optional, default is True)
-            index_col: None or str
+        Parameters
+        ----------
+        query: SQLAlchemy query object
+        fix_wkb: bool
+            whether to turn wkb objects into numpy arrays (optional, default is True)
+        index_col: None or str
+            column to use as index of dataframe
+        fix_decimal : bool
+            whether to convert Decimal columns to uint64 or floats depending on content
 
         Returns:
             Dataframe with query results
@@ -258,7 +301,7 @@ class AnalysisDataLinkBase(object):
         df = pd.read_sql(query.statement, self.sqlalchemy_engine,
                          coerce_float=False, index_col=index_col)
         if fix_wkb:
-            df = fix_wkb_columns(df)
+            df = fix_wkb_columns(df, convert_to_nm=self.convert_to_nm)
 
         if fix_decimal:
             df = fix_decimal_columns(df)
@@ -269,9 +312,16 @@ class AnalysisDataLinkBase(object):
                select_columns=None, fix_wkb=True, index_col=None):
         """ Wraps make_query and execute_query in one function
 
-        :param query_args:
-        :param join_args:
-        :param filter_args:
+        Parameters
+        ----------
+        query_args:
+        join_args:
+        filter_args:
+        select_columns:
+        fix_wkb: bool
+        index_col: str or None
+
+
 
         :param select_columns:
         :param fix_wkb:

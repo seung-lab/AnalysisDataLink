@@ -4,31 +4,58 @@ import sqlalchemy
 from analysisdatalink import datalink_base
 
 class AnalysisDataLink(datalink_base.AnalysisDataLinkBase):
+    """ Base analysis object
+
+    Parameters
+    ----------
+    dataset_name : str 
+        name of dataset to query
+    materialization_version : int or None
+        what version to query (defaults to most recent), 
+        use materialization service to query what is available
+    sqlalchemy_database_uri : str
+        sqlalchemy connection uri with db type, username, password, ip, and port
+    verbose : bool
+        whether to print debugging info
+    annotation_endpoint : str or None
+        url of annotation endpoint to retrieve metadata about tables
+        (default to www.dynamicannotationframework.com/annotation)
+    convert_to_nm : len(3) iterable or None
+        conversion factor to convert spatial units into nm
+        from what is stored in db as voxels
+    
+    """
     def __init__(self, dataset_name, materialization_version=None,
                  sqlalchemy_database_uri=None, verbose=True,
-                 annotation_endpoint=None):
+                 annotation_endpoint=None, convert_to_nm=None):
         super().__init__(dataset_name, materialization_version,
                          sqlalchemy_database_uri, verbose=verbose,
-                         annotation_endpoint=annotation_endpoint)
+                         annotation_endpoint=annotation_endpoint, 
+                         convert_to_nm=convert_to_nm)
 
     def specific_query(self, tables, filter_in_dict={}, filter_notin_dict={},
                        filter_equal_dict = {},
                        select_columns=None):
         """ Allows a more narrow query without requiring knowledge about the
-            underlying data structures
+            underlying data structures 
 
-        :param tables: list of lists
+        Parameters
+        ----------
+        tables: list of lists
             standard: list of one entry: table_name of table that one wants to
                       query
             join: list of two lists: first entries are table names, second
                                      entries are the columns used for the join
-        :param filter_in_dict: dict of dicts
+        filter_in_dict: dict of dicts
             outer layer: keys are table names
             inner layer: keys are column names, values are entries to filter by
-        :param filter_notin_dict: dict of dicts
+        filter_notin_dict: dict of dicts
             inverse to filter_in_dict
-        :param select_columns: list of str
-        :return:
+        select_columns: list of str
+
+        Returns
+        -------
+        sqlalchemy query object:
         """
         tables = [[table] if not isinstance(table, list) else table
                   for table in tables]
