@@ -10,7 +10,10 @@ import pandas as pd
 import os
 import re
 import json
+import shapely
+import contextlib
 import requests
+from multiwrapper import multiprocessing_utils as mu
 from decimal import Decimal
 import analysisdatalink
 
@@ -23,19 +26,41 @@ def build_database_uri(base_uri, dataset_name, materialization_version):
     database_suffix = em_models.format_database_name(dataset_name, materialization_version)
     return base_uri + '/' + database_suffix
 
-
 def wkb_to_numpy(wkb):
     """ Fixes single geometry column """
-    shp=to_shape(wkb)
-    return np.array([shp.xy[0][0],shp.xy[1][0], shp.z], dtype=np.int)
-
+    shp = to_shape(wkb)
+    return shp.xy[0][0],shp.xy[1][0], shp.z
 
 def fix_wkb_columns(df):
     """ Fixes geometry columns """
     if len(df) > 0:
         for colname in df.columns:
             if isinstance(df.at[0,colname], WKBElement):
-                df[colname] = df[colname].apply(wkb_to_numpy)
+                xyz = mu.multiprocess_func(wkb_to_numpy, df[colname].tolist())
+                df[colname] = list(np.array(xyz, dtype=int))
+    return df
+
+def wkb_text_to_numpy(wkbstr):
+    shp = shapely.wkb.loads(wkbstr, hex=True)
+    return shp.xy[0][0], shp.xy[1][0], shp.z
+
+def fix_wkb_columns_text(df):
+    """Converts wkb columns to point triplets when the columns are already strings.
+    
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame to probe for wkb columns 
+    """
+    if len(df) > 0:
+        for colname in df.columns:
+            try:
+                with open(os.devnull, "w") as f, contextlib.redirect_stderr(f):
+                    shapely.wkb.loads(df[colname].loc[0], hex=True)
+                xyz = mu.multiprocess_func(wkb_text_to_numpy, df[colname].tolist())
+                df[colname] = list(np.array(xyz, dtype=int))
+            except:
+                continue
     return df
 
 def fix_decimal_columns(df):
@@ -244,7 +269,21 @@ class AnalysisDataLinkBase(object):
 
         return query
 
-    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, index_col=None):
+    def _df_via_buffer(self, query):
+        import io
+        import csv
+
+        with io.StringIO() as buf:
+            results = self.sqlalchemy_engine.execute(query.statement)
+            outcsv = csv.writer(buf)
+            outcsv.writerow(results.keys())
+            outcsv.writerows(results)
+
+            buf.seek(0)
+            df = pd.read_csv(buf)
+        return df
+
+    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, index_col=None, import_via_buffer=False):
         """ Query the database and make a dataframe out of the results
 
         Args:
@@ -255,18 +294,27 @@ class AnalysisDataLinkBase(object):
         Returns:
             Dataframe with query results
         """
-        df = pd.read_sql(query.statement, self.sqlalchemy_engine,
-                         coerce_float=False, index_col=index_col)
+        if import_via_buffer is True:
+            df = self._df_via_buffer(query)
+        else:
+            df = pd.read_sql(query.statement, self.sqlalchemy_engine,
+                            coerce_float=False, index_col=index_col)
+
         if fix_wkb:
-            df = fix_wkb_columns(df)
+            if import_via_buffer:
+                df = fix_wkb_columns_text(df)
+            else:
+                df = fix_wkb_columns(df)
 
         if fix_decimal:
-            df = fix_decimal_columns(df)
+            if not import_via_buffer:
+                df = fix_decimal_columns(df)
 
         return df
 
     def _query(self, query_args, join_args=None, filter_args=None,
-               select_columns=None, fix_wkb=True, index_col=None):
+               select_columns=None, fix_wkb=True, fix_decimal=True,
+               index_col=None, return_sql=False, import_via_buffer=False):
         """ Wraps make_query and execute_query in one function
 
         :param query_args:
@@ -283,8 +331,10 @@ class AnalysisDataLinkBase(object):
                                  join_args=join_args,
                                  filter_args=filter_args,
                                  select_columns=select_columns)
-
-        df = self._execute_query(query=query, fix_wkb=fix_wkb,
-                                 index_col=index_col)
-
-        return df
+        if return_sql:
+            return query
+        else:
+            df = self._execute_query(query=query, fix_wkb=fix_wkb,
+                                 fix_decimal=fix_decimal,
+                                 index_col=index_col, import_via_buffer=import_via_buffer)
+            return df

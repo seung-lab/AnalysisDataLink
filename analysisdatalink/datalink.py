@@ -13,7 +13,8 @@ class AnalysisDataLink(datalink_base.AnalysisDataLinkBase):
 
     def specific_query(self, tables, filter_in_dict={}, filter_notin_dict={},
                        filter_equal_dict = {},
-                       select_columns=None):
+                       select_columns=None, return_sql=False,
+                       fix_wkb=True, fix_decimal=True, import_via_buffer=False):
         """ Allows a more narrow query without requiring knowledge about the
             underlying data structures
 
@@ -67,6 +68,8 @@ class AnalysisDataLink(datalink_base.AnalysisDataLinkBase):
                 filter_args.append((self.model(filter_table).__dict__[column_name]==filter_value, ))
 
         return self._query(query_args=query_args, filter_args=filter_args,
-                           join_args=join_args, select_columns=select_columns)
+                           join_args=join_args, select_columns=select_columns,
+                           fix_wkb=fix_wkb, fix_decimal=fix_decimal, return_sql=return_sql,
+                           import_via_buffer=import_via_buffer)
 
 

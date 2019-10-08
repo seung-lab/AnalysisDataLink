@@ -15,7 +15,8 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def query_synapses(self, synapse_table, pre_ids=None, post_ids=None,
                        compartment_include_filter=None,
                        include_autapses=False,
-                       compartment_table=None):
+                       compartment_table=None, return_sql=False,
+                       fix_wkb=True, fix_decimal=True, import_via_buffer=False):
         """ Query synapses
 
         :param synapse_table: str
@@ -50,13 +51,17 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
 
         df = self.specific_query(tables,
                                  filter_in_dict=filter_in_dict,
-                                 filter_equal_dict=filter_equal_dict)
+                                 filter_equal_dict=filter_equal_dict,
+                                 return_sql=return_sql,
+                                 fix_wkb=fix_wkb, fix_decimal=fix_decimal,
+                                 import_via_buffer=import_via_buffer)
 
         return df
 
     def query_cell_types(self, cell_type_table, cell_type_include_filter=None,
                          cell_type_exclude_filter=None, return_only_ids=False,
-                         exclude_zero_root_ids=False):
+                         exclude_zero_root_ids=False, fix_wkb=True, fix_decimal=True,
+                         return_sql=False, import_via_buffer=False):
         """ Query cell type tables
 
         :param cell_type_table: str
@@ -87,7 +92,11 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         df = self.specific_query(tables=[cell_type_table],
                                  filter_in_dict=filter_in_dict,
                                  filter_notin_dict=filter_notin_dict,
-                                 select_columns=select_columns)
+                                 select_columns=select_columns,
+                                 fix_wkb=fix_wkb,
+                                 fix_decimal=fix_decimal,
+                                 return_sql=return_sql,
+                                 import_via_buffer=import_via_buffer)
 
         if return_only_ids:
             return np.array(df, dtype = np.uint64).squeeze()
@@ -96,7 +105,8 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
 
     def query_cell_ids(self, cell_id_table, cell_id_filter=None,
                        cell_id_exclude_filter=None, return_only_ids=False,
-                       exclude_zero_root_ids=False):
+                       exclude_zero_root_ids=False, fix_wkb=True, fix_decimal=True,
+                       return_sql=False, import_via_buffer=False):
         """ Query cell ids
 
         :param cell_id_table: str
@@ -125,7 +135,11 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         df = self.specific_query(tables=[cell_id_table],
                                  filter_in_dict=filter_in_dict,
                                  filter_notin_dict=filter_notin_dict,
-                                 select_columns=select_columns)
+                                 select_columns=select_columns,
+                                 fix_wkb=fix_wkb,
+                                 fix_decimal=fix_decimal,
+                                 return_sql=return_sql,
+                                 import_via_buffer=import_via_buffer)
 
         if return_only_ids:
             return np.array(df, dtype=np.uint64).squeeze()
@@ -134,7 +148,9 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
 
     def query_coreg(self, coreg_table, cell_id_filter=None,
                     cell_id_exclude_filter=None, return_only_mapping=False,
-                    exclude_zero_root_ids=False):
+                    exclude_zero_root_ids=False,
+                    fix_wkb=True, fix_decimal=True,
+                    return_sql=False, import_via_buffer=False):
         """ Queries coregistration
 
         :param coreg_table: str
@@ -165,7 +181,11 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         df = self.specific_query(tables=[coreg_table],
                                  filter_in_dict=filter_in_dict,
                                  filter_notin_dict=filter_notin_dict,
-                                 select_columns=select_columns)
+                                 select_columns=select_columns,
+                                 fix_wkb=fix_wkb,
+                                 fix_decimal=fix_decimal,
+                                 return_sql=return_sql,
+                                 import_via_buffer=import_via_buffer)
 
         if return_only_mapping:
             return np.array(df, dtype=np.uint64).squeeze()
