@@ -16,7 +16,8 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                        compartment_include_filter=None,
                        include_autapses=False,
                        compartment_table=None, return_sql=False,
-                       fix_wkb=True, fix_decimal=True, import_via_buffer=False):
+                       fix_wkb=True, fix_decimal=True, import_via_buffer=False,
+                       n_threads=None):
         """ Query synapses
 
         :param synapse_table: str
@@ -54,14 +55,15 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                                  filter_equal_dict=filter_equal_dict,
                                  return_sql=return_sql,
                                  fix_wkb=fix_wkb, fix_decimal=fix_decimal,
-                                 import_via_buffer=import_via_buffer)
+                                 import_via_buffer=import_via_buffer,
+                                 n_threads=n_threads)
 
         return df
 
     def query_cell_types(self, cell_type_table, cell_type_include_filter=None,
                          cell_type_exclude_filter=None, return_only_ids=False,
                          exclude_zero_root_ids=False, fix_wkb=True, fix_decimal=True,
-                         return_sql=False, import_via_buffer=False):
+                         return_sql=False, import_via_buffer=False, n_threads=None):
         """ Query cell type tables
 
         :param cell_type_table: str
@@ -96,7 +98,8 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                                  fix_wkb=fix_wkb,
                                  fix_decimal=fix_decimal,
                                  return_sql=return_sql,
-                                 import_via_buffer=import_via_buffer)
+                                 import_via_buffer=import_via_buffer,
+                                 n_threads=n_threads)
 
         if return_only_ids:
             return np.array(df, dtype = np.uint64).squeeze()
@@ -106,7 +109,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
     def query_cell_ids(self, cell_id_table, cell_id_filter=None,
                        cell_id_exclude_filter=None, return_only_ids=False,
                        exclude_zero_root_ids=False, fix_wkb=True, fix_decimal=True,
-                       return_sql=False, import_via_buffer=False):
+                       return_sql=False, import_via_buffer=False, n_threads=None):
         """ Query cell ids
 
         :param cell_id_table: str
@@ -139,7 +142,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                                  fix_wkb=fix_wkb,
                                  fix_decimal=fix_decimal,
                                  return_sql=return_sql,
-                                 import_via_buffer=import_via_buffer)
+                                 import_via_buffer=import_via_buffer, n_threads=n_threads)
 
         if return_only_ids:
             return np.array(df, dtype=np.uint64).squeeze()
@@ -150,7 +153,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                     cell_id_exclude_filter=None, return_only_mapping=False,
                     exclude_zero_root_ids=False,
                     fix_wkb=True, fix_decimal=True,
-                    return_sql=False, import_via_buffer=False):
+                    return_sql=False, import_via_buffer=False, n_threads=None):
         """ Queries coregistration
 
         :param coreg_table: str
@@ -185,7 +188,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                                  fix_wkb=fix_wkb,
                                  fix_decimal=fix_decimal,
                                  return_sql=return_sql,
-                                 import_via_buffer=import_via_buffer)
+                                 import_via_buffer=import_via_buffer, n_threads=n_threads)
 
         if return_only_mapping:
             return np.array(df, dtype=np.uint64).squeeze()
