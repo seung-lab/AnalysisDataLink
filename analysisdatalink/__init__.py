@@ -1,5 +1,6 @@
 import os
 import datetime
+from .utils import fix_wkb_column
 
 __version__ = "0.4.0"
 

@@ -1,24 +1,17 @@
 from emannotationschemas import models as em_models, \
     mesh_models as em_mesh_models
-from geoalchemy2.shape import to_shape, from_shape
-from geoalchemy2.elements import WKBElement
-from geoalchemy2.types import Geometry
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.sqltypes import Boolean
 import time
 import numpy as np
 import pandas as pd
 import os
 import re
 import json
-import shapely
 import contextlib
 import requests
-from multiwrapper import multiprocessing_utils as mu
-from decimal import Decimal
 import analysisdatalink
-from .utils import render_query
+from .utils import render_query, fix_columns_with_query
 
 def build_database_uri(base_uri, dataset_name, materialization_version):
     """Builds database name out of parameters"""
@@ -29,105 +22,6 @@ def build_database_uri(base_uri, dataset_name, materialization_version):
     database_suffix = em_models.format_database_name(dataset_name, materialization_version)
     return base_uri + '/' + database_suffix
 
-# def fix_wkb_columns(df, n_threads=None):
-#     """ Fixes geometry columns """
-#     if len(df) > 0:
-#         for colname in df.columns:
-#             if isinstance(df.at[0,colname], WKBElement):
-#                 xyz = mu.multiprocess_func(wkb_to_numpy, df[colname].tolist(), n_threads=n_threads)
-#                 df[colname] = list(np.array(xyz, dtype=int))
-#     return df
-
-def fix_wkb_column(df_col, wkb_data_start_ind=2, n_threads=None):
-    if len(df_col)==0:
-        return df_col
-
-    if isinstance(df_col.loc[0], str):
-        wkbstr = df_col.loc[0]
-        shp = shapely.wkb.loads(wkbstr[wkb_data_start_ind:], hex=True)
-        if isinstance(shp, shapely.geometry.point.Point):
-            return _fix_wkb_hex_point_column(df_col, n_threads=n_threads)
-    elif isinstance(df_col.loc[0], WKBElement):
-        return _fix_wkb_object_point_column(df_col, n_threads=n_threads)
-
-    return df_col
-
-def _wkb_object_point_to_numpy(wkb):
-    """ Fixes single geometry element """
-    shp = to_shape(wkb)
-    return shp.xy[0][0],shp.xy[1][0], shp.z
-
-def _fix_wkb_object_point_column(df_col, n_threads=None):
-    xyz = mu.multiprocess_func(_wkb_object_point_to_numpy, df_col.tolist(), n_threads=n_threads)
-    return list(np.array(xyz, dtype=int))
-
-def _wkb_hex_point_to_numpy(wkbstr, wkb_data_start_ind=2):
-    shp = shapely.wkb.loads(wkbstr[wkb_data_start_ind:], hex=True)
-    return shp.xy[0][0], shp.xy[1][0], shp.z
-
-def _fix_wkb_hex_point_column(df_col, n_threads=None):
-    xyz = mu.multiprocess_func(_wkb_hex_point_to_numpy,
-                               df_col.tolist(), n_threads)
-    return list(np.array(xyz, dtype=int))
-
-def _fix_boolean_column(df_col):
-    return df_col.apply(lambda x: True if x == 't' else False)
-
-def _fix_decimal_column(df_col):
-    is_integer_col=np.vectorize(lambda x: float(x).is_integer())
-    if np.all(is_integer_col(df_col)):
-        return df_col.apply(int)
-    else:
-        return df_col.apply(np.float)
-
-def fix_columns_with_query(df, query, n_threads=None, fix_decimal=True, fix_wkb=True, wkb_data_start_ind=2):
-    if len(df)>0:
-        schema_model = query.column_descriptions[0]['type']
-        for colname in df.columns:
-            coltype = type(getattr(schema_model, colname).type)
-            
-            if coltype is Boolean:
-                df[colname] = _fix_boolean_column(df[colname])
-
-            elif coltype is Geometry and fix_wkb is True:
-                df[colname] = fix_wkb_column(df[colname], wkb_data_start_ind=wkb_data_start_ind, n_threads=n_threads)
-
-            elif isinstance(df[colname].loc[0], Decimal) and fix_decimal is True:
-                df[colname] = _fix_decimal_column(df[colname])
-            else:
-                continue
-    return df
-
-# def fix_wkb_columns_text(df, n_threads=None, data_start_ind=2):
-#     """Converts wkb columns to point triplets when the columns are already strings.
-    
-#     Parameters
-#     ----------
-#     df : pandas.DataFrame
-#         DataFrame to probe for wkb columns 
-#     """
-#     if len(df) > 0:
-#         for colname in df.columns:
-#             try:
-#                 with open(os.devnull, "w") as f, contextlib.redirect_stderr(f):
-#                     shapely.wkb.loads(df[colname].loc[0][data_start_ind:], hex=True)
-#                 xyz = mu.multiprocess_func(wkb_text_to_numpy, df[colname].tolist(), n_threads)
-#                 df[colname] = list(np.array(xyz, dtype=int))
-#             except:
-#                 continue
-#     return df
-
-# def fix_decimal_columns(df):
-#     if len(df) > 0:
-#         is_decimal = np.vectorize(lambda x: isinstance(x, Decimal))
-#         is_integer_col = np.vectorize(lambda x: float(x).is_integer())
-#         for col in df.columns:
-#             if np.all(is_decimal(df[col])):
-#                 if np.all(is_integer_col(df[col])):
-#                     df[col] = df[col].apply(int)
-#                 else:
-#                     df[col] = df[col].apply(np.float)
-#     return df
 
 def get_materialization_versions(dataset_name, materialization_endpoint=None):
     """ Gets materialization versions with timestamps """
