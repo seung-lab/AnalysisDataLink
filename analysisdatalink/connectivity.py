@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 def edgelist_from_synapse_df(syn_df,
@@ -130,48 +128,3 @@ def adjacency_matrix_from_synapse_df(syn_df,
     el = edgelist_from_synapse_df(syn_df, pre_column, post_column, weight_column, agg)
     Adf = adjacency_matrix_from_edgelist(el, pre_column, post_column, weight_column, id_list)
     return Adf
-
-def adjacency_rasterplot(Adf, id_order=None, ax=None, weight_col='weight',
-                         pre_name='Presynaptic', post_name='Postsynaptic',
-                         rows_are='pre', **kwargs):
-    """Make a raster plot of an adjacency matrix from its dataframe with dots for nonzero values
-        with appearance determined by seaborn scatterplot. All kwargs are passed to the seaborn scatterplot fucntion.
-    
-    Parameters
-    ----------
-    Adf : pandas.DataFrame
-        Dataframe with postsynaptic elements as rows, presynaptic elements as columns, and edge weight as values.
-    id_order : Collection, optional
-        An ordered list of ids to order the plot by, by default None.
-    ax : matplotlib.Axis, optional
-        Axis object for the plot, by default None
-    pre_name: str, optional
-        Column name to give to the presynaptic indices, default is 'Presynaptic'.
-    post_name: str, optional
-        Column name to give to teh postsynaptic indices, default is 'Postsynaptic'.
-    weight_col : str, optional
-        Column name to give to the values, by default 'weight'. Used for legends as well as visualization style.
-    rows_are : ['pre' or 'post'], optional
-        If 'pre', rows are presynaptic to columns (Wij with j->i).
-        If 'post', columns are presynaptic to rows (Wij with i->j).
-        By default 'pre'
-    
-    Returns
-    -------
-    matplotlib.Axis 
-        Axis object for the plot
-    """
-    if id_order is not None:
-        Adf = Adf[id_order].loc[id_order]
-    ii, jj = np.where(Adf.values>0)
-    w = Adf.values[ii,jj]
-
-    data_df = pd.DataFrame(data={post_name:ii, pre_name:jj, weight_col:w})
-    if rows_are == 'pre':
-        ax=sns.scatterplot(x=post_name, y=pre_name, size=weight_col, data=data_df, ax=ax, **kwargs)
-    else:
-        ax=sns.scatterplot(y=post_name, x=pre_name, size=weight_col, data=data_df, ax=ax, **kwargs)
-    ax.set_aspect(1)
-    if ax.get_legend() is not None:
-        ax.legend(bbox_to_anchor=(1.01,1))
-    return ax
