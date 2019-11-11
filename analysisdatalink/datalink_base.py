@@ -1,7 +1,5 @@
 from emannotationschemas import models as em_models, \
     mesh_models as em_mesh_models
-from geoalchemy2.shape import to_shape, from_shape
-from geoalchemy2.elements import WKBElement
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import time
@@ -10,9 +8,10 @@ import pandas as pd
 import os
 import re
 import json
+import contextlib
 import requests
-from decimal import Decimal
 import analysisdatalink
+from .utils import render_query, fix_columns_with_query
 
 def build_database_uri(base_uri, dataset_name, materialization_version):
     """Builds database name out of parameters"""
@@ -23,32 +22,6 @@ def build_database_uri(base_uri, dataset_name, materialization_version):
     database_suffix = em_models.format_database_name(dataset_name, materialization_version)
     return base_uri + '/' + database_suffix
 
-
-def wkb_to_numpy(wkb):
-    """ Fixes single geometry column """
-    shp=to_shape(wkb)
-    return np.array([shp.xy[0][0],shp.xy[1][0], shp.z], dtype=np.int)
-
-
-def fix_wkb_columns(df):
-    """ Fixes geometry columns """
-    if len(df) > 0:
-        for colname in df.columns:
-            if isinstance(df.at[0,colname], WKBElement):
-                df[colname] = df[colname].apply(wkb_to_numpy)
-    return df
-
-def fix_decimal_columns(df):
-    if len(df) > 0:
-        is_decimal = np.vectorize(lambda x: isinstance(x, Decimal))
-        is_integer_col = np.vectorize(lambda x: float(x).is_integer())
-        for col in df.columns:
-            if np.all(is_decimal(df[col])):
-                if np.all(is_integer_col(df[col])):
-                    df[col] = df[col].apply(int)
-                else:
-                    df[col] = df[col].apply(np.float)
-    return df
 
 def get_materialization_versions(dataset_name, materialization_endpoint=None):
     """ Gets materialization versions with timestamps """
@@ -244,7 +217,18 @@ class AnalysisDataLinkBase(object):
 
         return query
 
-    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, index_col=None):
+    def _df_via_buffer(self, query, index_col=None):
+        import tempfile
+        with tempfile.TemporaryFile() as tmpfile:
+            conn = self.sqlalchemy_engine.raw_connection()
+            cur = conn.cursor()
+            copy_sql = f'COPY ({render_query(query)}) TO STDOUT WITH CSV HEADER'
+            cur.copy_expert(copy_sql, tmpfile)
+            tmpfile.seek(0)
+            df = pd.read_csv(tmpfile, index_col=index_col)
+        return df
+
+    def _execute_query(self, query, fix_wkb=True, fix_decimal=True, n_threads=None, index_col=None, import_via_buffer=False):
         """ Query the database and make a dataframe out of the results
 
         Args:
@@ -255,18 +239,19 @@ class AnalysisDataLinkBase(object):
         Returns:
             Dataframe with query results
         """
-        df = pd.read_sql(query.statement, self.sqlalchemy_engine,
-                         coerce_float=False, index_col=index_col)
-        if fix_wkb:
-            df = fix_wkb_columns(df)
+        if import_via_buffer is True:
+            df = self._df_via_buffer(query, index_col=index_col)
+        else:
+            df = pd.read_sql(query.statement, self.sqlalchemy_engine,
+                            coerce_float=False, index_col=index_col)
 
-        if fix_decimal:
-            df = fix_decimal_columns(df)
+        df = fix_columns_with_query(df, query, fix_wkb=fix_wkb, fix_decimal=fix_decimal, n_threads=n_threads)
 
         return df
 
     def _query(self, query_args, join_args=None, filter_args=None,
-               select_columns=None, fix_wkb=True, index_col=None):
+               select_columns=None, fix_wkb=True, fix_decimal=True, n_threads=None,
+               index_col=None, return_sql=False, import_via_buffer=False):
         """ Wraps make_query and execute_query in one function
 
         :param query_args:
@@ -283,8 +268,12 @@ class AnalysisDataLinkBase(object):
                                  join_args=join_args,
                                  filter_args=filter_args,
                                  select_columns=select_columns)
+        if return_sql:
+            return query
+        else:
+            df = self._execute_query(query=query, fix_wkb=fix_wkb,
+                                     fix_decimal=fix_decimal, n_threads=n_threads,
+                                     index_col=index_col, import_via_buffer=import_via_buffer)
+            return df
 
-        df = self._execute_query(query=query, fix_wkb=fix_wkb,
-                                 index_col=index_col)
 
-        return df
