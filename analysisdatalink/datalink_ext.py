@@ -13,7 +13,20 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                          annotation_endpoint=annotation_endpoint)
 
 
-    def query_synapses_nda(url, authkey, pre_ids,post_ids):
+    def create_nda_url(baseurl, objid, bounds):
+        """create an nda query req_url
+        bounds : [][xmin,ymin,zmin],[xmax,ymax,zmax]]
+        """
+        if bounds is None:
+            req_url = url+'/neuron_children_simple/minnie/fine_aligned/segmentation/%s'%objid
+
+        else:
+            boundstring = '%d,%d/%d,%d/%d,%d'%(bounds[0][0],bounds[1][0],bounds[0][1],bounds[1][1],bounds[0][2],bounds[1][2])
+            req_url = url+'/neuron_children/minnie/fine_aligned/segmentation/0/'+boundstring+'/%s/?filter=keypoint'%objid
+
+        return req_url
+
+    def query_synapses_nda(url, authkey, pre_ids,post_ids,bounds=None):
         """NDA query to find synapses for a dataset_name
 
         url: url of nda connection
@@ -25,13 +38,14 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         """
         syn1 = None
         syn2 = None
+        print("This is bounds ",bounds)
 
         if len(pre_ids) > 0:
             slist1 = []
             plist1 = []
             for pid in pre_ids:
                 #find all presynaptic synapses
-                req_url = url+'/neuron_children_simple/minnie/fine_aligned/segmentation/'+'%s/'%pid
+                req_url = create_nda_url(url,pid,bounds)
                 r = requests.get(req_url, headers=authkey)
                 df = pd.DataFrame.from_dict(r.json(), orient='columns')
                 df1 = df.loc[df['child_synapses'] == 1] #presynaptic
@@ -45,7 +59,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
             plist2 = []
             for oid in post_ids:
                 #find all postsynaptic pni_synapses_i1
-                req_url = url+'/neuron_children_simple/minnie/fine_aligned/segmentation/'+'%s/'%oid
+                req_url = create_nda_url(url,oid,bounds)
                 r = requests.get(req_url, headers=authkey)
                 df = pd.DataFrame.from_dict(r.json(), orient='columns')
                 df2 = df.loc[df['child_synapses'] == 2] #postsynaptic
@@ -65,15 +79,13 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                 post_pt_root_id = []
                 for ind in range(len(common_synapses)):
                     s = common_synapses[ind]
-                    req_url = url + '/synapse_keypoint/minnie65/v1/synapses/0/%s'%s
+                    req_url = url + '/synapse_keypoint/minnie65/v1/synapses/0/'+boundstring+'/%s/?filter=keypoint'%s
                     r = requests.get(req_url, headers=authkey)
                     synlocdf = pd.DataFrame.from_dict(r.json(), orient='columns')
                     ctr_pt_position.append(synlocdf['keypoint'].values)
                     pre_pt_root_id.append([])
                     post_pt_root_id.append(plist2[indices_2[ind]])
-                    print(slist2)
-                    print(indices_2)
-                    print(ind)
+
 
         #if only post ids
         if len(pre_ids) > 0:
@@ -90,9 +102,6 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
                     synlocdf = pd.DataFrame.from_dict(r.json(), orient='columns')
                     ctr_pt_position.append(synlocdf['keypoint'].values)
                     post_pt_root_id.append([])
-                    print(slist1)
-                    print(indices_1)
-                    print(ind)
                     pre_pt_root_id.append(plist1[indices_1[ind]])
 
         #if both pre_ids and post_ids
@@ -115,7 +124,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
         dict = {'id': common_synapses, 'ctr_pt_position': ctr_pt_position, 'pre_pt_root_id': pre_pt_root_id , 'post_pt_root_id': post_pt_root_id}
         df = pd.DataFrame(dict)
         return df
-        
+
 
     def query_synapses(self, synapse_table, pre_ids=None, post_ids=None,
                        compartment_include_filter=None,
