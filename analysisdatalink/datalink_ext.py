@@ -15,7 +15,7 @@ class AnalysisDataLinkExt(datalink.AnalysisDataLink):
 
     def create_nda_url(baseurl, objid, bounds):
         """create an nda query req_url
-        bounds : [][xmin,ymin,zmin],[xmax,ymax,zmax]]
+        bounds : [[xmin,ymin,zmin],[xmax,ymax,zmax]]
         """
         if bounds is None:
             req_url = url+'/neuron_children_simple/minnie/fine_aligned/segmentation/%s'%objid
